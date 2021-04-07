@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+
+  polardb-order:
+    image: "postgres:13"
+    container_name: "polardb-order"
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=polardb_order
