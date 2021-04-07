@@ -28,6 +28,7 @@ public class OrderService {
     public Mono<Order> submitOrder(final String isbn, final int quantity) {
         return bookClient.getBookByIsbn(isbn)
                 .flatMap(bookResponse -> Mono.just(buildAcceptedOrder(bookResponse, quantity)))
+                .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
                 .onErrorReturn(buildRejectedOrder(isbn, quantity))
                 .flatMap(orderRepository::save);
     }

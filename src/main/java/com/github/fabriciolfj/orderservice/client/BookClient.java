@@ -4,6 +4,9 @@ import com.github.fabriciolfj.orderservice.config.BookClientProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
 
 @Component
 public class BookClient {
@@ -20,6 +23,8 @@ public class BookClient {
         return webClient.get()
                 .uri(isbn)
                 .retrieve()
-                .bodyToMono(BookResponse.class);
+                .bodyToMono(BookResponse.class)
+                .timeout(Duration.ofSeconds(1), Mono.empty())
+                .retryWhen(Retry.backoff(3, Duration.ofMillis(100)));
     }
 }
