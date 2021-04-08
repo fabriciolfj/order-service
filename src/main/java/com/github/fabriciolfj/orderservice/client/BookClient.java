@@ -3,6 +3,8 @@ package com.github.fabriciolfj.orderservice.client;
 import com.github.fabriciolfj.orderservice.config.BookClientProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
@@ -25,6 +27,7 @@ public class BookClient {
                 .retrieve()
                 .bodyToMono(BookResponse.class)
                 .timeout(Duration.ofSeconds(1), Mono.empty())
+                .onErrorResume(WebClientResponseException.NotFound.class, ex -> Mono.empty())
                 .retryWhen(Retry.backoff(3, Duration.ofMillis(100)));
     }
 }
