@@ -18,6 +18,28 @@ spring:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
     url: jdbc:postgresql://localhost:5433/polardb_order
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 polar:
   catalog-service-url: http://localhost:9001/books/
+
+---
+spring:
+  flyway:
+    url: jdbc:postgresql://polardb-order-postgresql:5432/polardb_order
+  r2dbc:
+    url: r2dbc:postgresql://polardb-order-postgresql:5432/polardb_order
+  active:
+    profile: docker
+
+polar:
+  catalog-service-url: http://catalog-service:9001/books/

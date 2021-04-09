@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  order-app
+  labels:
+    app:  order-app
+spec:
+  selector:
+    matchLabels:
+      app: order-app
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  order-app
+    spec:
+      containers:
+      - name:  order-app
+        image:  fabricio211/order-service
+        resources:
+          requests:
+            cpu: 300m
+            memory: 500Mi
+          limits:
+            cpu: 300m
+            memory: 500Mi
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 9003
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 20
+          periodSeconds: 40
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 9003
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 20
+          periodSeconds: 50
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: docker
+        ports:
+        - containerPort:  9003
+      restartPolicy: Always
