@@ -35,9 +35,9 @@ polar:
 ---
 spring:
   flyway:
-    url: jdbc:postgresql://polardb-order-postgresql:5432/polardb_order
+    url: jdbc:postgresql://polardb-order-postgresql:5432/postgres
   r2dbc:
-    url: r2dbc:postgresql://polardb-order-postgresql:5432/polardb_order
+    url: r2dbc:postgresql://polardb-order-postgresql:5432/postgres
   active:
     profile: docker
 

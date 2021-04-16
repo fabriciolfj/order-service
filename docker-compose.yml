@@ -1,9 +1,16 @@
 version: "3.8"
 services:
 
+  order-service:
+    image: fabricio211/order-service:2.0.0
+    container_name: order-service
+    ports:
+      - 9003:9003
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
   polardb-order:
     image: "postgres:13"
-    container_name: "polardb-order"
+    container_name: "polardb-order-postgresql"
     ports:
       - 5433:5432
     environment:
