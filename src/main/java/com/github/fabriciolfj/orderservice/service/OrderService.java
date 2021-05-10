@@ -7,8 +7,12 @@ import com.github.fabriciolfj.orderservice.domain.OrderStatus;
 import com.github.fabriciolfj.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +20,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final BookClient bookClient;
+
+    private final Consumer<Order> acceptSend;
 
     public Flux<Order> getAllOrders() {
         return orderRepository.findAll();
@@ -25,12 +31,23 @@ public class OrderService {
         return orderRepository.findById(id);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     public Mono<Order> submitOrder(final String isbn, final int quantity) {
         return bookClient.getBookByIsbn(isbn)
                 .flatMap(bookResponse -> Mono.just(buildAcceptedOrder(bookResponse, quantity)))
                 .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
                 .onErrorReturn(buildRejectedOrder(isbn, quantity))
-                .flatMap(orderRepository::save);
+                .flatMap(orderRepository::save)
+                .doOnNext(acceptSend);
+    }
+
+    public void updateOrderStatus(final Long orderId, final OrderStatus status) {
+        orderRepository.findById(orderId)
+                .map(order -> {
+                    order.setStatus(status);
+                    return order;
+                }).flatMap(orderRepository::save)
+                .subscribe();
     }
 
     private Order buildAcceptedOrder(final BookResponse book, final int quantity) {

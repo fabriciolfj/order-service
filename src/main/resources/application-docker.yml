@@ -1,0 +1,12 @@
+spring:
+  flyway:
+    url: jdbc:postgresql://polardb-order-postgresql:5432/postgres
+  r2dbc:
+    url: r2dbc:postgresql://polardb-order-postgresql:5432/postgres
+  active:
+    profile: docker
+  rabbitmq:
+    host: polarmq-broker
+
+polar:
+  catalog-service-url: http://catalog-service:9001/books/

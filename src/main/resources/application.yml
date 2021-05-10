@@ -4,6 +4,24 @@ server:
     connection-timeout: 5s
   shutdown: graceful
 spring:
+  cloud:
+    function:
+      definition: dispatchOrder
+    stream:
+      bindings:
+        dispatchOrder-in-0:
+          destination: order-dispatched
+          group: polar-updater
+      rabbit:
+        bindings:
+          order-accepted:
+            producer:
+              transacted: true
+  rabbitmq:
+    host: localhost
+    password: password
+    username: user
+    connection-timeout: 15s
   r2dbc:
     username: admin
     password: admin
@@ -31,15 +49,3 @@ management:
 
 polar:
   catalog-service-url: http://localhost:9001/books/
-
----
-spring:
-  flyway:
-    url: jdbc:postgresql://polardb-order-postgresql:5432/postgres
-  r2dbc:
-    url: r2dbc:postgresql://polardb-order-postgresql:5432/postgres
-  active:
-    profile: docker
-
-polar:
-  catalog-service-url: http://catalog-service:9001/books/

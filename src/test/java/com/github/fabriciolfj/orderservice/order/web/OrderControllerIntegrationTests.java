@@ -1,12 +1,17 @@
 package com.github.fabriciolfj.orderservice.order.web;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fabriciolfj.orderservice.client.BookClient;
 import com.github.fabriciolfj.orderservice.client.BookResponse;
 import com.github.fabriciolfj.orderservice.domain.Order;
 import com.github.fabriciolfj.orderservice.domain.OrderStatus;
+import com.github.fabriciolfj.orderservice.event.OrderAcceptedMessage;
 import com.github.fabriciolfj.orderservice.web.OrderRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.context.annotation.Import;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -21,9 +26,12 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
+@Import(TestChannelBinderConfiguration.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @Testcontainers
@@ -31,6 +39,13 @@ class OrderControllerIntegrationTests {
 
 	@Container
 	static PostgreSQLContainer<?> postgresql = new PostgreSQLContainer<>(DockerImageName.parse("postgres:13"));
+
+	@Autowired
+	private ObjectMapper objectMapper;
+
+	@Autowired
+	@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+	private OutputDestination output;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -50,11 +65,11 @@ class OrderControllerIntegrationTests {
 	}
 
 	private static String r2dbcUrl() {
-		return String.format("r2dbc:postgresql://%s:%s/%s", postgresql.getContainerIpAddress(),
-				postgresql.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT), postgresql.getDatabaseName());
+		return String.format("r2dbc:postgresql://%s:%s/%s", postgresql.getHost(),
+				postgresql.getFirstMappedPort(), postgresql.getDatabaseName());
 	}
 
-	//@Test
+	@Test
 	void whenGetRequestWithIdThenOrderReturned() {
 		String bookIsbn = "1234567893";
 		BookResponse book = new BookResponse(bookIsbn, "Title", "Author", 9.90);
@@ -76,8 +91,8 @@ class OrderControllerIntegrationTests {
 		assertThat(fetchedOrder).usingRecursiveComparison().isEqualTo(expectedOrder);
 	}
 
-	//@Test
-	void whenPostRequestAndBookExistsThenOrderAccepted() {
+	@Test
+	void whenPostRequestAndBookExistsThenOrderAccepted() throws IOException {
 		String bookIsbn = "1234567899";
 		BookResponse book = new BookResponse(bookIsbn, "Title", "Author", 9.90);
 		given(bookClient.getBookByIsbn(bookIsbn)).willReturn(Mono.just(book));
@@ -95,9 +110,12 @@ class OrderControllerIntegrationTests {
 		assertThat(createdOrder.getBookName()).isEqualTo(book.getTitle() + " - " + book.getAuthor());
 		assertThat(createdOrder.getBookPrice()).isEqualTo(book.getPrice());
 		assertThat(createdOrder.getStatus()).isEqualTo(OrderStatus.ACCEPTED);
+
+		assertThat(objectMapper.readValue(output.receive().getPayload(), OrderAcceptedMessage.class))
+				.isEqualTo(new OrderAcceptedMessage(createdOrder.getId()));
 	}
 
-	//@Test
+	@Test
 	void whenPostRequestAndBookNotExistsThenOrderRejected() {
 		String bookIsbn = "1234567894";
 		given(bookClient.getBookByIsbn(bookIsbn)).willReturn(Mono.empty());

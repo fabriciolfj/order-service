@@ -28,6 +28,7 @@ public class BookClient {
                 .bodyToMono(BookResponse.class)
                 .timeout(Duration.ofSeconds(1), Mono.empty())
                 .onErrorResume(WebClientResponseException.NotFound.class, ex -> Mono.empty())
-                .retryWhen(Retry.backoff(3, Duration.ofMillis(100)));
+                .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))
+                .log();
     }
 }
