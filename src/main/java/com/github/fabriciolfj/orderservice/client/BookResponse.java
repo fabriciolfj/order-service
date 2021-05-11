@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BookResponse {
 
-    private Long id;
     private String isbn;
     private String title;
     private String author;

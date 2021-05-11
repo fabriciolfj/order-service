@@ -6,7 +6,7 @@ spring:
   active:
     profile: docker
   rabbitmq:
-    host: polarmq-broker
+    host: polarmq-broker-rabbitmq
 
 polar:
   catalog-service-url: http://catalog-service:9001/books/
