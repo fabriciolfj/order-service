@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.awt.print.Book;
 import java.time.Duration;
 
 @Component
@@ -24,8 +25,11 @@ public class BookClient {
     public Mono<BookResponse> getBookByIsbn(final String isbn) {
         return webClient.get()
                 .uri(isbn)
-                .retrieve()
-                .bodyToMono(BookResponse.class)
+                //.retrieve()
+                .exchangeToMono(c -> {
+                    return c.bodyToMono(BookResponse.class);
+                })
+                //.bodyToMono(BookResponse.class)
                 .timeout(Duration.ofSeconds(1), Mono.empty())
                 .onErrorResume(WebClientResponseException.NotFound.class, ex -> Mono.empty())
                 .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))
